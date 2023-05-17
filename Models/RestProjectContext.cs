@@ -20,22 +20,39 @@ namespace RestProject.Models
 
         public DbSet<RestProject.Models.Publisher> Publishers { get; set; }
 
+        public DbSet<RestProject.Models.BookLanguage> BookLanguages { get; set; }
+
         public DbSet<RestProject.Models.AuthorBook> AuthorBooks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Book>().ToTable("Book")
+            modelBuilder.Entity<Book>().ToTable("Book");
+            modelBuilder.Entity<Book>().HasKey(e => e.Book_id);
+            modelBuilder.Entity<Book>()
                 .HasMany(e => e.Authors)
                 .WithMany(e => e.Books)
                 .UsingEntity<AuthorBook>();
 
-            modelBuilder.Entity<Author>().ToTable("Author");
+            modelBuilder.Entity<Author>().ToTable("Author").HasKey(e=>e.Author_id);
 
-            modelBuilder.Entity<Publisher>().ToTable("Publisher")
+            modelBuilder.Entity<Publisher>().ToTable("Publisher");
+            modelBuilder.Entity<Publisher>().HasKey(e => e.Publisher_id);
+            modelBuilder.Entity<Publisher>()
                 .HasMany(e=>e.Books)
                 .WithOne(e=>e.Publisher)
-                .HasForeignKey(e=>e.PublisherId)
+                .HasForeignKey(e=>e.Publisher_id)
                 .IsRequired();
+
+            modelBuilder.Entity<BookLanguage>().ToTable("Book_language");
+            modelBuilder.Entity<BookLanguage>().HasKey(e => e.Language_id);
+            modelBuilder.Entity<BookLanguage>()
+                .HasMany(e => e.Books)
+                .WithOne(e => e.BookLanguage)
+                .HasForeignKey(e => e.Language_id)
+                .IsRequired();
+
+            modelBuilder.Entity<AuthorBook>().ToTable("Book_author")
+                .HasKey(e => new { e.Book_id, e.Author_id });
         }
     }
 }
