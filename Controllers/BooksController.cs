@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -30,15 +30,29 @@ namespace RestProject.Controllers
               return NotFound();
           }
 
-            var book = await (from b in _context.Books.Include(b => b.Publisher).Include(b => b.Authors)
+            var book = await (from b in _context.Books
+                              .Include(b => b.Publisher)
+                              .Include(b => b.Authors)
+                              .Include(b => b.BookLanguage)
                               select new BookToReceive()
                               {
-                                  Id = b.Id, Isbn13 = b.Isbn13, Num_pages = b.Num_pages, Title = b.Title,
-                                  Publication_date = b.Publication_date, Publisher_name = b.Publisher.Publisher_name,
+                                  Book_id = b.Book_id, Isbn13 = b.Isbn13, Num_pages = b.Num_pages, Title = b.Title,
+                                  Publication_date = b.Publication_date,
+                                  Publisher = new PublisherToTransfer()
+                                  {
+                                      Publisher_id = b.Publisher_id,
+                                      Publisher_name = b.Publisher.Publisher_name
+                                  },
+                                  BookLanguage = new BookLanguageToTransfer()
+                                  {
+                                      Language_id = b.Language_id,
+                                      Language_code = b.BookLanguage.Language_code,
+                                      Language_name = b.BookLanguage.Language_name
+                                  },
                                   Authors = (from a in b.Authors
                                              select new AuthorToTransfer()
                                              {
-                                                 Id = a.Id,
+                                                 Author_id = a.Author_id,
                                                  Author_name = a.Author_name
                                              }).ToList()
                               }).ToListAsync();
@@ -54,22 +68,35 @@ namespace RestProject.Controllers
           {
               return NotFound();
           }
-            var book = await (from b in _context.Books.Include(b => b.Publisher).Include(b => b.Authors)
+            var book = await (from b in _context.Books
+                              .Include(b => b.Publisher)
+                              .Include(b => b.Authors)
+                              .Include(b => b.BookLanguage)
                               select new BookToReceive()
                               {
-                                  Id = b.Id,
+                                  Book_id = b.Book_id,
                                   Isbn13 = b.Isbn13,
                                   Num_pages = b.Num_pages,
                                   Title = b.Title,
                                   Publication_date = b.Publication_date,
-                                  Publisher_name = b.Publisher.Publisher_name,
+                                  Publisher = new PublisherToTransfer()
+                                  {
+                                      Publisher_id = b.Publisher_id,
+                                      Publisher_name = b.Publisher.Publisher_name
+                                  },
+                                  BookLanguage = new BookLanguageToTransfer()
+                                  {
+                                      Language_id = b.Language_id, 
+                                      Language_code = b.BookLanguage.Language_code,
+                                      Language_name = b.BookLanguage.Language_name
+                                  },
                                   Authors = (from a in b.Authors
                                              select new AuthorToTransfer()
                                              {
-                                                 Id = a.Id,
+                                                 Author_id = a.Author_id,
                                                  Author_name = a.Author_name
                                              }).ToList()
-                              }).FirstOrDefaultAsync(i=>i.Id == id);
+                              }).FirstOrDefaultAsync(i=>i.Book_id == id);
 
             if (book == null)
             {
@@ -84,7 +111,7 @@ namespace RestProject.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBook(int id, BookToTransfer book)
         {
-            if (id != book.Id)
+            if (id != book.Book_id)
             {
                 return BadRequest();
             }
@@ -98,7 +125,8 @@ namespace RestProject.Controllers
             newBook.Isbn13 = book.Isbn13;
             newBook.Num_pages = book.Num_pages;
             newBook.Publication_date = book.Publication_date;
-            newBook.PublisherId = book.PublisherId;
+            newBook.Publisher_id = book.Publisher_id;
+            newBook.Language_id = book.Language_id;
 
             _context.Entry(newBook).State = EntityState.Modified;
 
@@ -132,15 +160,32 @@ namespace RestProject.Controllers
               return Problem("Entity set 'RestProjectContext.Books'  is null.");
           }
             var book = new Book() 
-            { 
-                Id = bookDto.Id, Isbn13 = bookDto.Isbn13, Num_pages = bookDto.Num_pages, Title = bookDto.Title,
-                Publication_date=bookDto.Publication_date, PublisherId = bookDto.PublisherId
+            {
+                Book_id = bookDto.Book_id, Isbn13 = bookDto.Isbn13, Num_pages = bookDto.Num_pages, Title = bookDto.Title,
+                Publication_date=bookDto.Publication_date,
+                Publisher_id = bookDto.Publisher_id,
+                Language_id = bookDto.Language_id
             };/*_mapper.Map<Book>(bookDto);*/
 
           _context.Books.Add(book);
-          await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+            //try
+            //{
+            //    await _context.SaveChangesAsync();
+            //}
+            //catch (DbUpdateException)
+            //{
+            //    if (BookExists(book.Id))
+            //    {
+            //        return Conflict();
+            //    }
+            //    else
+            //    {
+            //        throw;
+            //    }
+            //}
 
-          return CreatedAtAction("GetBook", new { id = book.Id }, book);
+            return CreatedAtAction("GetBook", new { id = book.Book_id }, book);
         }
 
         //[HttpPost("{AuthorId}")]
@@ -178,7 +223,7 @@ namespace RestProject.Controllers
 
         private bool BookExists(int id)
         {
-            return (_context.Books?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Books?.Any(e => e.Book_id == id)).GetValueOrDefault();
         }
     }
 }

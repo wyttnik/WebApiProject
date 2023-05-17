@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -33,13 +32,13 @@ namespace RestProject.Controllers
           var authors = from a in _context.Authors.Include(a => a.Books)
                         select new AuthorToReceive()
                         {
-                            Id = a.Id, Author_name = a.Author_name,
+                            Author_id = a.Author_id, Author_name = a.Author_name,
                             Books = (from b in a.Books
                                      select new BookToTransfer()
                                      {
-                                         Id = b.Id, Isbn13 = b.Isbn13, Num_pages = b.Num_pages,
+                                         Book_id = b.Book_id, Isbn13 = b.Isbn13, Num_pages = b.Num_pages,
                                          Title = b.Title, Publication_date = b.Publication_date,
-                                         PublisherId = b.PublisherId
+                                         Publisher_id = b.Publisher_id, Language_id = b.Language_id
                                      }).ToList()
                         };
 
@@ -57,19 +56,20 @@ namespace RestProject.Controllers
             var author = await (from a in _context.Authors.Include(a => a.Books)
                                 select new AuthorToReceive()
                                 {
-                                    Id = a.Id,
+                                    Author_id = a.Author_id,
                                     Author_name = a.Author_name,
                                     Books = (from b in a.Books
                                              select new BookToTransfer()
                                              {
-                                                 Id = b.Id,
+                                                 Book_id = b.Book_id,
                                                  Isbn13 = b.Isbn13,
                                                  Num_pages = b.Num_pages,
                                                  Title = b.Title,
                                                  Publication_date = b.Publication_date,
-                                                 PublisherId = b.PublisherId
+                                                 Publisher_id = b.Publisher_id,
+                                                 Language_id = b.Language_id
                                              }).ToList()
-                                }).FirstOrDefaultAsync(i=>i.Id == id);
+                                }).FirstOrDefaultAsync(i=>i.Author_id == id);
 
             if (author == null)
             {
@@ -84,7 +84,7 @@ namespace RestProject.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAuthor(int id, AuthorToTransfer author)
         {
-            if (id != author.Id)
+            if (id != author.Author_id)
             {
                 return BadRequest();
             }
@@ -128,13 +128,28 @@ namespace RestProject.Controllers
           }
             var author = new Author()
             {
-                Id = authorDto.Id,
+                Author_id = authorDto.Author_id,
                 Author_name = authorDto.Author_name
             };
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
+            //try
+            //{
+            //    await _context.SaveChangesAsync();
+            //}
+            //catch (DbUpdateException)
+            //{
+            //    if (AuthorExists(author.Id))
+            //    {
+            //        return Conflict();
+            //    }
+            //    else
+            //    {
+            //        throw;
+            //    }
+            //}
 
-            return CreatedAtAction("GetAuthor", new { id = author.Id }, author);
+            return CreatedAtAction("GetAuthor", new { id = author.Author_id }, author);
         }
 
         // DELETE: api/Authors/5
@@ -159,7 +174,7 @@ namespace RestProject.Controllers
 
         private bool AuthorExists(int id)
         {
-            return (_context.Authors?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Authors?.Any(e => e.Author_id == id)).GetValueOrDefault();
         }
     }
 }

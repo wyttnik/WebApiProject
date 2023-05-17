@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,20 +30,18 @@ namespace RestProject.Controllers
               return NotFound();
           }
 
-          var publishers = from p in _context.Publishers.Include(p=>p.Books)
+          var publishers = from p in _context.Publishers
+                           .Include(p=>p.Books)
                            select new PublisherToReceive()
                            {
-                               Id = p.Id, Publisher_name = p.Publisher_name,
+                               Publisher_id = p.Publisher_id, Publisher_name = p.Publisher_name,
                                Books = (from b in p.Books
-                                       select new BookToReceive()
+                                       select new BookToTransfer()
                                        {
-                                           Id = b.Id, Isbn13 = b.Isbn13, Num_pages = b.Num_pages, Title = b.Title,
-                                           Publication_date = b.Publication_date, Publisher_name = p.Publisher_name,
-                                           Authors = (from a in b.Authors
-                                                      select new AuthorToTransfer()
-                                                      {
-                                                          Id = a.Id, Author_name = a.Author_name
-                                                      }).ToList()
+                                           Book_id = b.Book_id, Isbn13 = b.Isbn13, Num_pages = b.Num_pages, Title = b.Title,
+                                           Publication_date = b.Publication_date,
+                                           Publisher_id = b.Publisher_id,
+                                           Language_id = b.Language_id
                                        }).ToList()
                            };
 
@@ -62,24 +59,20 @@ namespace RestProject.Controllers
             var publisher = await (from p in _context.Publishers.Include(b=>b.Books)
                              select new PublisherToReceive()
                              {
-                                 Publisher_name = p.Publisher_name, Id = p.Id,
+                                 Publisher_name = p.Publisher_name,
+                                 Publisher_id = p.Publisher_id,
                                  Books = (from b in p.Books
-                                          select new BookToReceive()
+                                          select new BookToTransfer()
                                           {
-                                              Id = b.Id,
+                                              Book_id = b.Book_id,
                                               Isbn13 = b.Isbn13,
                                               Num_pages = b.Num_pages,
                                               Title = b.Title,
                                               Publication_date = b.Publication_date,
-                                              Publisher_name = p.Publisher_name,
-                                              Authors = (from a in b.Authors
-                                                         select new AuthorToTransfer()
-                                                         {
-                                                             Id = a.Id,
-                                                             Author_name = a.Author_name
-                                                         }).ToList()
+                                              Publisher_id = b.Publisher_id,
+                                              Language_id = b.Language_id
                                           }).ToList()
-                             }).FirstOrDefaultAsync(i => i.Id == id);
+                             }).FirstOrDefaultAsync(i => i.Publisher_id == id);
 
             if (publisher == null)
             {
@@ -94,7 +87,7 @@ namespace RestProject.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPublisher(int id, PublisherToTransfer publisher)
         {
-            if (id != publisher.Id)
+            if (id != publisher.Publisher_id)
             {
                 return BadRequest();
             }
@@ -138,12 +131,28 @@ namespace RestProject.Controllers
 
             var publisher = new Publisher()
             {
-                Id = publisherDto.Id, Publisher_name = publisherDto.Publisher_name
+                Publisher_id = publisherDto.Publisher_id, Publisher_name = publisherDto.Publisher_name
             }; /*_mapper.Map<Publisher>(publisherDto);*/
             _context.Publishers.Add(publisher);
-            await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetPublisher", new { id = publisher.Id }, publisher);
+            await _context.SaveChangesAsync();
+            //try
+            //{
+            //    await _context.SaveChangesAsync();
+            //}
+            //catch (DbUpdateException)
+            //{
+            //    if (PublisherExists(publisher.Id))
+            //    {
+            //        return Conflict();
+            //    }
+            //    else
+            //    {
+            //        throw;
+            //    }
+            //}
+
+            return CreatedAtAction("GetPublisher", new { id = publisher.Publisher_id }, publisher);
         }
 
         // DELETE: api/Publishers/5
@@ -168,7 +177,7 @@ namespace RestProject.Controllers
 
         private bool PublisherExists(int id)
         {
-            return (_context.Publishers?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Publishers?.Any(e => e.Publisher_id == id)).GetValueOrDefault();
         }
     }
 }

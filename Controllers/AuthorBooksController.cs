@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Policy;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -33,14 +34,14 @@ namespace RestProject.Controllers
         }
 
         // GET: api/AuthorBooks/5
-        [HttpGet("{authorId} & {bookId}")]
-        public async Task<ActionResult<AuthorBook>> GetAuthorBook(int authorId, int bookId)
+        [HttpGet("{bookId} & {authorId}")]
+        public async Task<ActionResult<AuthorBook>> GetAuthorBook(int bookId, int authorId)
         {
           if (_context.AuthorBooks == null)
           {
               return NotFound();
           }
-            var authorBook = await _context.AuthorBooks.FindAsync(authorId, bookId);
+            var authorBook = await _context.AuthorBooks.FindAsync(bookId, authorId);
 
             if (authorBook == null)
             {
@@ -52,16 +53,16 @@ namespace RestProject.Controllers
 
         // PUT: api/AuthorBooks/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{authorId} & {bookId}")]
-        public async Task<IActionResult> PutAuthorBook(int authorId, int bookId, AuthorBook authorBook)
+        [HttpPut("{bookId} & {authorId}")]
+        public async Task<IActionResult> PutAuthorBook(int bookId, int authorId, AuthorBook authorBook)
         {
 
-            if (await _context.AuthorBooks.FindAsync(authorId, bookId) == null)
+            if (await _context.AuthorBooks.FindAsync(bookId, authorId) == null)
             {
                 return NotFound();
             }
-            await PostAuthorBook(new AuthorBook() { AuthorId = authorBook .AuthorId, BookId = authorBook.BookId});
-            await DeleteAuthorBook(authorId, bookId);
+            await PostAuthorBook(new AuthorBook() { Author_id = authorBook.Author_id, Book_id = authorBook.Book_id });
+            await DeleteAuthorBook(bookId, authorId);
 
             try
             {
@@ -69,7 +70,7 @@ namespace RestProject.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!AuthorBookExists(authorBook.AuthorId, authorBook.BookId))
+                if (!AuthorBookExists(authorBook.Book_id, authorBook.Author_id))
                 {
                     return NotFound();
                 }
@@ -98,7 +99,7 @@ namespace RestProject.Controllers
             }
             catch (DbUpdateException)
             {
-                if (AuthorBookExists(authorBook.AuthorId, authorBook.BookId))
+                if (AuthorBookExists(authorBook.Book_id, authorBook.Author_id))
                 {
                     return Conflict();
                 }
@@ -108,19 +109,19 @@ namespace RestProject.Controllers
                 }
             }
 
-            return CreatedAtAction("GetAuthorBook", new { authorId = authorBook.AuthorId,
-                                                          bookId = authorBook.BookId}, authorBook);
+            return CreatedAtAction("GetAuthorBook", new { authorId = authorBook.Author_id,
+                                                          bookId = authorBook.Book_id}, authorBook);
         }
 
         // DELETE: api/AuthorBooks/5
-        [HttpDelete("{authorId} & {bookId}")]
-        public async Task<IActionResult> DeleteAuthorBook(int authorId, int bookId)
+        [HttpDelete("{bookId} & {authorId}")]
+        public async Task<IActionResult> DeleteAuthorBook(int bookId, int authorId)
         {
             if (_context.AuthorBooks == null)
             {
                 return NotFound();
             }
-            var authorBook = await _context.AuthorBooks.FindAsync(authorId, bookId);
+            var authorBook = await _context.AuthorBooks.FindAsync(bookId, authorId);
             if (authorBook == null)
             {
                 return NotFound();
@@ -132,9 +133,9 @@ namespace RestProject.Controllers
             return NoContent();
         }
 
-        private bool AuthorBookExists(int authorId, int bookId)
+        private bool AuthorBookExists(int bookId, int authorId)
         {
-            return (_context.AuthorBooks?.Any(e => e.AuthorId == authorId && e.BookId == bookId)).GetValueOrDefault();
+            return (_context.AuthorBooks?.Any(e => e.Book_id == bookId && e.Author_id == authorId)).GetValueOrDefault();
         }
     }
 }
