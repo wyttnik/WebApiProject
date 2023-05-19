@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RestProject.Models;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,7 +31,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<RestProjectContext>();
     context.Database.EnsureCreated();
-    context.Database.ExecuteSqlRaw("INSERT INTO author (author_name, author_id) VALUES\r\n('A. Bartlett Giamatti', 1),\r\n('A. Elizabeth Delany', 2),\r\n('A. Merritt', 3),\r\n('A. Roger Merrill', 4),\r\n('A. Walton Litz', 5),\r\n('A.B. Yehoshua', 6)");
+    DbInitializer.Initialize(context);
 }
 
 app.UseHttpsRedirection();
