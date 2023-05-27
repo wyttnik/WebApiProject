@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Security.Policy;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +14,7 @@ namespace RestProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BooksController : ControllerBase
     {
         private readonly RestProjectContext _context;
@@ -23,6 +26,7 @@ namespace RestProject.Controllers
 
         // GET: api/Books
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<BookToReceive>>> GetBooks()
         {
           if (_context.Books == null)
@@ -109,6 +113,7 @@ namespace RestProject.Controllers
         // PUT: api/Books/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutBook(int id, BookToTransfer book)
         {
             if (id != book.Book_id)
@@ -143,7 +148,7 @@ namespace RestProject.Controllers
                 }
                 else
                 {
-                    throw;
+                    return Conflict();
                 }
             }
 
@@ -153,6 +158,7 @@ namespace RestProject.Controllers
         // POST: api/Books
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<Book>> PostBook(BookToTransfer bookDto)
         {
           if (_context.Books == null)
@@ -167,42 +173,29 @@ namespace RestProject.Controllers
                 Language_id = bookDto.Language_id
             };/*_mapper.Map<Book>(bookDto);*/
 
-          _context.Books.Add(book);
-            await _context.SaveChangesAsync();
-            //try
-            //{
-            //    await _context.SaveChangesAsync();
-            //}
-            //catch (DbUpdateException)
-            //{
-            //    if (BookExists(book.Id))
-            //    {
-            //        return Conflict();
-            //    }
-            //    else
-            //    {
-            //        throw;
-            //    }
-            //}
+             _context.Books.Add(book);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (BookExists(book.Book_id))
+                {
+                    return Conflict();
+                }
+                else
+                {
+                    return Conflict();
+                }
+            }
 
             return CreatedAtAction("GetBook", new { id = book.Book_id }, book);
         }
 
-        //[HttpPost("{AuthorId}")]
-        //public async Task<ActionResult<Book>> AttachAuthorToBook(int id)
-        //{
-        //    if (_context.Books == null)
-        //    {
-        //        return Problem("Entity set 'RestProjectContext.Books'  is null.");
-        //    }
-        //    _context.Books.Add(book);
-        //    await _context.SaveChangesAsync();
-
-        //    return CreatedAtAction("GetBook", new { id = book.Id }, book);
-        //}
-
         // DELETE: api/Books/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteBook(int id)
         {
             if (_context.Books == null)

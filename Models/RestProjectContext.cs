@@ -14,15 +14,15 @@ namespace RestProject.Models
         {
         }
 
-        public DbSet<RestProject.Models.Book> Books { get; set; }
+        public DbSet<Book> Books { get; set; }
 
-        public DbSet<RestProject.Models.Author> Authors { get; set; }
+        public DbSet<Author> Authors { get; set; }
 
-        public DbSet<RestProject.Models.Publisher> Publishers { get; set; }
+        public DbSet<Publisher> Publishers { get; set; }
 
-        public DbSet<RestProject.Models.BookLanguage> BookLanguages { get; set; }
+        public DbSet<BookLanguage> BookLanguages { get; set; }
 
-        public DbSet<RestProject.Models.AuthorBook> AuthorBooks { get; set; }
+        public DbSet<AuthorBook> AuthorBooks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

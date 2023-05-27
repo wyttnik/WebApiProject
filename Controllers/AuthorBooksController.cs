@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Policy;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +15,7 @@ namespace RestProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AuthorBooksController : ControllerBase
     {
         private readonly RestProjectContext _context;
@@ -54,6 +57,7 @@ namespace RestProject.Controllers
         // PUT: api/AuthorBooks/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{bookId} & {authorId}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutAuthorBook(int bookId, int authorId, AuthorBook authorBook)
         {
 
@@ -61,12 +65,13 @@ namespace RestProject.Controllers
             {
                 return NotFound();
             }
-            await PostAuthorBook(new AuthorBook() { Author_id = authorBook.Author_id, Book_id = authorBook.Book_id });
-            await DeleteAuthorBook(bookId, authorId);
+            
 
             try
             {
-                await _context.SaveChangesAsync();
+                await PostAuthorBook(new AuthorBook() { Author_id = authorBook.Author_id, Book_id = authorBook.Book_id });
+                await DeleteAuthorBook(bookId, authorId);
+                
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -76,9 +81,10 @@ namespace RestProject.Controllers
                 }
                 else
                 {
-                    throw;
+                    return Conflict();
                 }
             }
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -86,6 +92,7 @@ namespace RestProject.Controllers
         // POST: api/AuthorBooks
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<AuthorBook>> PostAuthorBook(AuthorBook authorBook)
         {
           if (_context.AuthorBooks == null)
@@ -105,7 +112,7 @@ namespace RestProject.Controllers
                 }
                 else
                 {
-                    throw;
+                    return Conflict();
                 }
             }
 
@@ -115,6 +122,7 @@ namespace RestProject.Controllers
 
         // DELETE: api/AuthorBooks/5
         [HttpDelete("{bookId} & {authorId}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteAuthorBook(int bookId, int authorId)
         {
             if (_context.AuthorBooks == null)

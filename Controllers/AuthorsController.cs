@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ namespace RestProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AuthorsController : ControllerBase
     {
         private readonly RestProjectContext _context;
@@ -82,6 +85,7 @@ namespace RestProject.Controllers
         // PUT: api/Authors/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutAuthor(int id, AuthorToTransfer author)
         {
             if (id != author.Author_id)
@@ -120,6 +124,7 @@ namespace RestProject.Controllers
         // POST: api/Authors
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<Author>> PostAuthor(AuthorToTransfer authorDto)
         {
           if (_context.Authors == null)
@@ -132,28 +137,29 @@ namespace RestProject.Controllers
                 Author_name = authorDto.Author_name
             };
             _context.Authors.Add(author);
-            await _context.SaveChangesAsync();
-            //try
-            //{
-            //    await _context.SaveChangesAsync();
-            //}
-            //catch (DbUpdateException)
-            //{
-            //    if (AuthorExists(author.Id))
-            //    {
-            //        return Conflict();
-            //    }
-            //    else
-            //    {
-            //        throw;
-            //    }
-            //}
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (AuthorExists(author.Author_id))
+                {
+                    return Conflict();
+                }
+                else
+                {
+                    return Conflict();
+                }
+            }
 
             return CreatedAtAction("GetAuthor", new { id = author.Author_id }, author);
         }
 
         // DELETE: api/Authors/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
             if (_context.Authors == null)

@@ -4,14 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using RestProject.Models;
+using Microsoft.AspNetCore.Authorization;
 using static System.Reflection.Metadata.BlobBuilder;
 
 namespace RestProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PublishersController : ControllerBase
     {
         private readonly RestProjectContext _context;
@@ -20,7 +23,7 @@ namespace RestProject.Controllers
         {
             _context = context;
         }
-
+        
         // GET: api/Publishers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PublisherToReceive>>> GetPublishers()
@@ -85,6 +88,7 @@ namespace RestProject.Controllers
         // PUT: api/Publishers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutPublisher(int id, PublisherToTransfer publisher)
         {
             if (id != publisher.Publisher_id)
@@ -122,6 +126,7 @@ namespace RestProject.Controllers
         // POST: api/Publishers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<Publisher>> PostPublisher(PublisherToTransfer publisherDto)
         {
           if (_context.Publishers == null)
@@ -135,28 +140,25 @@ namespace RestProject.Controllers
             }; /*_mapper.Map<Publisher>(publisherDto);*/
             _context.Publishers.Add(publisher);
 
-            await _context.SaveChangesAsync();
-            //try
-            //{
-            //    await _context.SaveChangesAsync();
-            //}
-            //catch (DbUpdateException)
-            //{
-            //    if (PublisherExists(publisher.Id))
-            //    {
-            //        return Conflict();
-            //    }
-            //    else
-            //    {
-            //        throw;
-            //    }
-            //}
+            //await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (PublisherExists(publisher.Publisher_id))
+                {
+                    return Conflict();
+                }
+            }
 
             return CreatedAtAction("GetPublisher", new { id = publisher.Publisher_id }, publisher);
         }
 
         // DELETE: api/Publishers/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeletePublisher(int id)
         {
             if (_context.Publishers == null)

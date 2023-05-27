@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ namespace RestProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BookLanguagesController : ControllerBase
     {
         private readonly RestProjectContext _context;
@@ -91,6 +94,7 @@ namespace RestProject.Controllers
         // PUT: api/BookLanguages/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutBookLanguage(int id, BookLanguageToTransfer bookLanguage)
         {
             if (id != bookLanguage.Language_id)
@@ -126,6 +130,7 @@ namespace RestProject.Controllers
         // POST: api/BookLanguages
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<BookLanguage>> PostBookLanguage(BookLanguageToTransfer bookLanguageDto)
         {
           if (_context.BookLanguages == null)
@@ -140,28 +145,24 @@ namespace RestProject.Controllers
                 Language_code = bookLanguageDto.Language_code
             };
             _context.BookLanguages.Add(bookLanguage);
-            await _context.SaveChangesAsync();
-            //try
-            //{
-            //    await _context.SaveChangesAsync();
-            //}
-            //catch (DbUpdateException)
-            //{
-            //    if (BookLanguageExists(bookLanguage.LanguageId))
-            //    {
-            //        return Conflict();
-            //    }
-            //    else
-            //    {
-            //        throw;
-            //    }
-            //}
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (BookLanguageExists(bookLanguage.Language_id))
+                {
+                    return Conflict();
+                }
+            }
 
             return CreatedAtAction("GetBookLanguage", new { id = bookLanguage.Language_id }, bookLanguage);
         }
 
         // DELETE: api/BookLanguages/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteBookLanguage(int id)
         {
             if (_context.BookLanguages == null)
