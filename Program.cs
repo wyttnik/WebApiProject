@@ -82,6 +82,7 @@ using (var scope = app.Services.CreateScope())
 
     var authContext = services.GetRequiredService<AuthContext>();
     authContext.Database.EnsureCreated();
+    DbInitializer.Initialize(authContext);
 }
 
 app.UseHttpsRedirection();
