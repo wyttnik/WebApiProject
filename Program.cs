@@ -64,7 +64,9 @@ builder.Services.AddSwaggerGen(c => {
         }
     });
 });
-builder.Services.AddDataProtection();
+builder.Services.AddDataProtection()
+ .SetApplicationName("RestProject")
+ .SetDefaultKeyLifetime(TimeSpan.FromDays(600));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
