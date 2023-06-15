@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -63,7 +64,7 @@ builder.Services.AddSwaggerGen(c => {
         }
     });
 });
-
+builder.Services.AddDataProtection();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -75,21 +76,27 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
+    var dataProvider = app.Services.GetService<IDataProtectionProvider>();
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<RestProjectContext>();
     context.Database.EnsureCreated();
-    DbInitializer.Initialize(context);
+    DbInitializer.Initialize(context, dataProvider);
 
     var authContext = services.GetRequiredService<AuthContext>();
     authContext.Database.EnsureCreated();
-    DbInitializer.Initialize(authContext);
+    //var tt = app.Services.GetService<>
+    DbInitializer.Initialize(authContext, dataProvider);
 }
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "api/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

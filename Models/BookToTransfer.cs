@@ -1,4 +1,6 @@
-﻿namespace RestProject.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RestProject.Models
 {
     public class BookToTransfer
     {
@@ -11,5 +13,8 @@
         public int Publisher_id { get; set; }
 
         public int Language_id { get; set; }
+
+        [NotMapped]
+        public IFormFile FileUri { get; set; }
     }
 }

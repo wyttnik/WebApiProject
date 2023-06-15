@@ -73,7 +73,7 @@ namespace RestProject.Controllers
                 await DeleteAuthorBook(bookId, authorId);
                 
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception) // DbUpdateConcurrencyException
             {
                 if (!AuthorBookExists(authorBook.Book_id, authorBook.Author_id))
                 {
@@ -104,7 +104,7 @@ namespace RestProject.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (Exception) // DbUpdateException
             {
                 if (AuthorBookExists(authorBook.Book_id, authorBook.Author_id))
                 {

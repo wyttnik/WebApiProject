@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using NuGet.Protocol.Plugins;
 
 namespace RestProject.Models
 {
     public class DbInitializer
     {
-        public static void Initialize(DbContext DbContext)
+        public static void Initialize(DbContext DbContext, IDataProtectionProvider dataProtectionProvider)
         {
             if (DbContext.GetType() == typeof(RestProjectContext))
             {
@@ -43,10 +44,13 @@ namespace RestProject.Models
                 var context = (AuthContext)DbContext;
                 if (!context.Users.Any())
                 {
+                    var dataProtector = dataProtectionProvider.CreateProtector("UsersControllerPurpose");
                     var users = new User[]
                     {
-                        new User{ Login = "admin", Password = "admin", Role = "admin"},
-                        new User{ Login = "testUser", Password = "123", Role = "user"},
+                        new User{ User_id = 1, Login = dataProtector.Protect("zeroOzer")
+                        , Password = dataProtector.Protect("123321"), Role = "admin"},
+                        new User{ User_id = 2, Login = dataProtector.Protect("testUser"), 
+                            Password = dataProtector.Protect("123"), Role = "user"},
                     };
                     context.Users.AddRange(users);
                     context.SaveChanges();

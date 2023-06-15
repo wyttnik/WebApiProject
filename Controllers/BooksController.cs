@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Security.Permissions;
 using System.Security.Policy;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -18,10 +19,12 @@ namespace RestProject.Controllers
     public class BooksController : ControllerBase
     {
         private readonly RestProjectContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public BooksController(RestProjectContext context)
+        public BooksController(RestProjectContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: api/Books
@@ -53,6 +56,7 @@ namespace RestProject.Controllers
                                       Language_code = b.BookLanguage.Language_code,
                                       Language_name = b.BookLanguage.Language_name
                                   },
+                                  ImageUrl = b.ImageUrl,
                                   Authors = (from a in b.Authors
                                              select new AuthorToTransfer()
                                              {
@@ -94,6 +98,7 @@ namespace RestProject.Controllers
                                       Language_code = b.BookLanguage.Language_code,
                                       Language_name = b.BookLanguage.Language_name
                                   },
+                                  ImageUrl = b.ImageUrl,
                                   Authors = (from a in b.Authors
                                              select new AuthorToTransfer()
                                              {
@@ -114,7 +119,7 @@ namespace RestProject.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> PutBook(int id, BookToTransfer book)
+        public async Task<IActionResult> PutBook(int id, [FromForm] BookToTransfer book)
         {
             if (id != book.Book_id)
             {
@@ -126,12 +131,14 @@ namespace RestProject.Controllers
             {
                 return NotFound();
             }
+            string path = await UploadImage(book.FileUri);
             newBook.Title = book.Title;
             newBook.Isbn13 = book.Isbn13;
             newBook.Num_pages = book.Num_pages;
             newBook.Publication_date = book.Publication_date;
             newBook.Publisher_id = book.Publisher_id;
             newBook.Language_id = book.Language_id;
+            newBook.ImageUrl = path;
 
             _context.Entry(newBook).State = EntityState.Modified;
 
@@ -140,8 +147,9 @@ namespace RestProject.Controllers
                 await _context.SaveChangesAsync();
 
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception) // DbUpdateConcurrencyException
             {
+                System.IO.File.Delete(path);
                 if (!BookExists(id))
                 {
                     return NotFound();
@@ -159,26 +167,30 @@ namespace RestProject.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<Book>> PostBook(BookToTransfer bookDto)
+        public async Task<ActionResult<Book>> PostBook([FromForm]BookToTransfer bookDto)
         {
           if (_context.Books == null)
           {
               return Problem("Entity set 'RestProjectContext.Books'  is null.");
           }
-            var book = new Book() 
+            //string fileName = bookDto.FileUri.FileName;
+            //string filePath = GetFilePath(fileName);
+            string path = await UploadImage(bookDto.FileUri);
+            var book = new Book()
             {
                 Book_id = bookDto.Book_id, Isbn13 = bookDto.Isbn13, Num_pages = bookDto.Num_pages, Title = bookDto.Title,
-                Publication_date=bookDto.Publication_date,
+                Publication_date = bookDto.Publication_date,
                 Publisher_id = bookDto.Publisher_id,
-                Language_id = bookDto.Language_id
-            };/*_mapper.Map<Book>(bookDto);*/
+                Language_id = bookDto.Language_id,
+                ImageUrl = path
+            };
 
              _context.Books.Add(book);
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (Exception) //DbUpdateException
             {
                 if (BookExists(book.Book_id))
                 {
@@ -217,6 +229,18 @@ namespace RestProject.Controllers
         private bool BookExists(int id)
         {
             return (_context.Books?.Any(e => e.Book_id == id)).GetValueOrDefault();
+        }
+
+        private async Task<string> UploadImage(IFormFile file)
+        {
+            var filePath = _environment.WebRootPath + "\\Images\\" + file.FileName;
+            //if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+
+            using (FileStream ms = new(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(ms);
+            }
+            return "https://localhost:7159/Images/" + file.FileName;
         }
     }
 }

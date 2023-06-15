@@ -12,6 +12,8 @@
 
         public BookLanguageToTransfer BookLanguage { get; set; } = null!;
 
+        public string? ImageUrl { get; set; }
+
         public List<AuthorToTransfer> Authors { get; set; } = new();
     }
 }

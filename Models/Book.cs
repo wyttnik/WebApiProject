@@ -15,6 +15,8 @@ namespace RestProject.Models
 
         public int Language_id { get; set; }
         public int Publisher_id { get; set; }
+
+        public string? ImageUrl { get; set; }
         public Publisher Publisher { get; set; } = null!;
 
         public BookLanguage BookLanguage { get; set; } = null!;

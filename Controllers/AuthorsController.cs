@@ -106,7 +106,7 @@ namespace RestProject.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception) // DbUpdateConcurrencyException
             {
                 if (!AuthorExists(id))
                 {
@@ -142,7 +142,7 @@ namespace RestProject.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (Exception) // DbUpdateException
             {
                 if (AuthorExists(author.Author_id))
                 {

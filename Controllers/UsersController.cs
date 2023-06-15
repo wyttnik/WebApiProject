@@ -6,10 +6,12 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NuGet.Protocol.Plugins;
 using RestProject.Models;
 
 namespace RestProject.Controllers
@@ -19,14 +21,16 @@ namespace RestProject.Controllers
     public class UsersController : ControllerBase
     {
         private readonly AuthContext _context;
+        private readonly IDataProtector _dataProtector;
 
-        public UsersController(AuthContext context)
+        public UsersController(AuthContext context, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
+            _dataProtector = dataProtectionProvider.CreateProtector("UsersControllerPurpose");
         }
 
         // GET: api/Users
-        [Authorize]
+        [Authorize(Roles = "admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
@@ -34,19 +38,36 @@ namespace RestProject.Controllers
             {
                 return NotFound();
             }
-            return await _context.Users.ToListAsync();
+            var users = await (from b in _context.Users
+                               select new User()
+                               {
+                                   User_id = b.User_id,
+                                   Login = _dataProtector.Unprotect(b.Login),
+                                   Password = _dataProtector.Unprotect(b.Password),
+                                   Role = b.Role
+                               }).ToListAsync();
+            return users;
         }
 
         // GET: api/Users/5
         [Authorize(Roles = "admin")]
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(string id)
+        [HttpGet("{login}")]
+        public async Task<ActionResult<User>> GetUser(string login)
         {
             if (_context.Users == null)
             {
                 return NotFound();
             }
-            var user = await _context.Users.FindAsync(id);
+
+            var users = await (from b in _context.Users
+                         select new User()
+                         {
+                             User_id = b.User_id,
+                             Login = _dataProtector.Unprotect(b.Login),
+                             Password = _dataProtector.Unprotect(b.Password),
+                             Role = b.Role
+                         }).ToListAsync();
+            var user = users.FirstOrDefault(i => i.Login == login);
 
             if (user == null)
             {
@@ -58,7 +79,7 @@ namespace RestProject.Controllers
 
         // POST: api/Users
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [Authorize(Roles = "admin")]
+        //[Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(User user)
         {
@@ -72,46 +93,80 @@ namespace RestProject.Controllers
                 return Problem("Wrong role! You can be admin or user");
             }
 
-            _context.Users.Add(user);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (UserExists(user.Login))
-                {
-                    return Conflict();
-                }
-            }
+            var users = await (from b in _context.Users
+                         select new User()
+                         {
+                             User_id = b.User_id,
+                             Login = _dataProtector.Unprotect(b.Login),
+                             Password = _dataProtector.Unprotect(b.Password),
+                             Role = b.Role
+                         }).ToListAsync();
+            var userFound = users.FirstOrDefault(i => i.Login == user.Login);
 
-            return CreatedAtAction("GetUser", new { id = user.Login }, user);
+            if (userFound == null)
+            {
+                var newUser = new User()
+                {
+                    User_id = users.Count+1,
+                    Login = _dataProtector.Protect(user.Login),
+                    Password = _dataProtector.Protect(user.Password),
+                    Role = user.Role
+                };
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction("GetUser", new { login = newUser.Login }, newUser);
+            }
+            else
+            {
+                return Conflict("User already exists");
+            }
         }
 
         // DELETE: api/Users/5
         [Authorize(Roles = "admin")]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(string id)
+        [HttpDelete("{login}")]
+        public async Task<IActionResult> DeleteUser(string login)
         {
             if (_context.Users == null)
             {
                 return NotFound();
             }
-            var user = await _context.Users.FindAsync(id);
+            var users = await (from b in _context.Users
+                         select new User()
+                         {
+                             User_id = b.User_id,
+                             Login = _dataProtector.Unprotect(b.Login),
+                             Password = _dataProtector.Unprotect(b.Password),
+                             Role = b.Role
+                         }).ToListAsync();
+            var user = users.FirstOrDefault(i => i.Login == login);
+
             if (user == null)
             {
                 return NotFound();
             }
+            var userToDelete = await _context.Users.FindAsync(user.User_id);
 
-            _context.Users.Remove(user);
+            _context.Users.Remove(userToDelete);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool UserExists(string id)
+        private bool UserExists(string login)
         {
-            return (_context.Users?.Any(e => e.Login == id)).GetValueOrDefault();
+            var users = (from b in _context.Users
+                              select new User()
+                              {
+                                  User_id = b.User_id,
+                                  Login = _dataProtector.Unprotect(b.Login),
+                                  Password = _dataProtector.Unprotect(b.Password),
+                                  Role = b.Role
+                              }).ToList();
+            var user = users.FirstOrDefault(i => i.Login == login);
+            
+            if (user != null) return true;
+            return false;
         }
     }
 }

@@ -112,7 +112,7 @@ namespace RestProject.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception) // DbUpdateConcurrencyException
             {
                 if (!BookLanguageExists(id))
                 {
@@ -149,7 +149,7 @@ namespace RestProject.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (Exception) // DbUpdateException
             {
                 if (BookLanguageExists(bookLanguage.Language_id))
                 {

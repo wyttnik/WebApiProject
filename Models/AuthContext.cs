@@ -14,7 +14,7 @@ namespace RestProject.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().ToTable("UserInfo");
-            modelBuilder.Entity<User>().HasKey(e => e.Login);
+            modelBuilder.Entity<User>().HasKey(e => e.User_id);
         }
     }
 }
