@@ -107,7 +107,7 @@ namespace RestProject.Controllers
             {
                 var newUser = new User()
                 {
-                    User_id = users.Count+1,
+                    User_id = users[users.Count-1].User_id+1,
                     Login = _dataProtector.Protect(user.Login),
                     Password = _dataProtector.Protect(user.Password),
                     Role = user.Role
@@ -151,22 +151,6 @@ namespace RestProject.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool UserExists(string login)
-        {
-            var users = (from b in _context.Users
-                              select new User()
-                              {
-                                  User_id = b.User_id,
-                                  Login = _dataProtector.Unprotect(b.Login),
-                                  Password = _dataProtector.Unprotect(b.Password),
-                                  Role = b.Role
-                              }).ToList();
-            var user = users.FirstOrDefault(i => i.Login == login);
-            
-            if (user != null) return true;
-            return false;
         }
     }
 }

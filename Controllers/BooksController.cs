@@ -131,14 +131,19 @@ namespace RestProject.Controllers
             {
                 return NotFound();
             }
-            string path = await UploadImage(book.FileUri);
+
+            string? path = null;
             newBook.Title = book.Title;
             newBook.Isbn13 = book.Isbn13;
             newBook.Num_pages = book.Num_pages;
             newBook.Publication_date = book.Publication_date;
             newBook.Publisher_id = book.Publisher_id;
             newBook.Language_id = book.Language_id;
-            newBook.ImageUrl = path;
+            if (book.FileUri != null)
+            {
+                path = await UploadImage(book.FileUri);
+                newBook.ImageUrl = path;
+            }
 
             _context.Entry(newBook).State = EntityState.Modified;
 
@@ -146,10 +151,11 @@ namespace RestProject.Controllers
             {
                 await _context.SaveChangesAsync();
 
+
             }
             catch (Exception) // DbUpdateConcurrencyException
             {
-                System.IO.File.Delete(path);
+                if (path != null) System.IO.File.Delete(path);
                 if (!BookExists(id))
                 {
                     return NotFound();
@@ -233,14 +239,18 @@ namespace RestProject.Controllers
 
         private async Task<string> UploadImage(IFormFile file)
         {
-            var filePath = _environment.WebRootPath + "\\Images\\" + file.FileName;
-            //if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
-
-            using (FileStream ms = new(filePath, FileMode.Create))
+            if (file != null)
             {
-                await file.CopyToAsync(ms);
+                var filePath = _environment.WebRootPath + "\\Images\\" + file.FileName;
+                //if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+
+                using (FileStream ms = new(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(ms);
+                }
+                return "https://localhost:7159/Images/" + file.FileName;
             }
-            return "https://localhost:7159/Images/" + file.FileName;
+            return "https://localhost:7159/Images/0.png";
         }
     }
 }

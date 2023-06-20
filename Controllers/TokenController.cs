@@ -42,7 +42,7 @@ namespace RestProject.Controllers
 
             if (user != null)
             {
-                if (!user.Password.Equals(password)) return BadRequest("Invalid password");
+                if (!user.Password.Equals(password)) return BadRequest("Invalid username or password");
 
                 //create claims details based on the user information
                 var claims = new[] {
@@ -72,7 +72,7 @@ namespace RestProject.Controllers
             }
             else
             {
-                return BadRequest("Invalid credentials");
+                return BadRequest("Invalid username or password");
             }
         }
     }

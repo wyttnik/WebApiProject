@@ -15,6 +15,6 @@ namespace RestProject.Models
         public int Language_id { get; set; }
 
         [NotMapped]
-        public IFormFile FileUri { get; set; }
+        public IFormFile? FileUri { get; set; }
     }
 }
