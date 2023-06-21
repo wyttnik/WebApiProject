@@ -50,7 +50,7 @@ namespace RestProject.Controllers
         }
 
         // GET: api/Users/5
-        [Authorize(Roles = "admin")]
+        [Authorize]
         [HttpGet("{login}")]
         public async Task<ActionResult<User>> GetUser(string login)
         {

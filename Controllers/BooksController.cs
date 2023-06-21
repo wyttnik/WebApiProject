@@ -141,6 +141,17 @@ namespace RestProject.Controllers
             newBook.Language_id = book.Language_id;
             if (book.FileUri != null)
             {
+                string oldImg = newBook.ImageUrl[(newBook.ImageUrl.LastIndexOf("/") + 1)..];
+
+                if (oldImg != "0.png")
+                {
+                    if (book.FileUri.FileName != oldImg)
+                    {
+                        var filePath = _environment.WebRootPath + "\\Images\\" + oldImg;
+                        if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+                    }
+                }
+
                 path = await UploadImage(book.FileUri);
                 newBook.ImageUrl = path;
             }
@@ -226,7 +237,16 @@ namespace RestProject.Controllers
                 return NotFound();
             }
 
+            string imgName = book.ImageUrl[(book.ImageUrl.LastIndexOf("/") + 1)..];
+
+            if (imgName != "0.png")
+            {
+                var filePath = _environment.WebRootPath + "\\Images\\" + imgName;
+                if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+            }
+
             _context.Books.Remove(book);
+            
             await _context.SaveChangesAsync();
 
             return NoContent();
